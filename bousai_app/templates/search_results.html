@@ -17,44 +17,6 @@
           </div>
           <div class="shelter-info">
             <div class="shelter-name">{{ shelter.name }}</div>
-            <div class="shelter-details">
-              <div class="detail-item">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>{{ shelter.district }}</span>
-              </div>
-              <div class="detail-item">
-                <i class="fas fa-home"></i>
-                <span>{{ shelter.address }}</span>
-              </div>
-              {% if shelter.phone %}
-              <div class="detail-item">
-                <i class="fas fa-phone"></i>
-                <span>{{ shelter.phone }}</span>
-              </div>
-              {% endif %}
-              {% if shelter.facilities %}
-              <div class="detail-item">
-                <i class="fas fa-cog"></i>
-                <span>{{ shelter.facilities }}</span>
-              </div>
-              {% endif %}
-              <div class="shelter-badges">
-                {% if shelter.designated_shelter %}
-                <span class="badge designated"><i class="fas fa-shield-alt"></i> 指定避難所</span>
-                {% endif %}
-                {% if shelter.pet_space %}
-                <span class="badge pet"><i class="fas fa-paw"></i> ペット可</span>
-                {% endif %}
-                {% if shelter.barrier_free_toilet %}
-                <span class="badge barrier-free"><i class="fas fa-wheelchair"></i> バリアフリー</span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-          <div class="shelter-map">
-            <a href="https://www.google.com/maps/search/?api=1&query={{ shelter.lat }},{{ shelter.lon }}" target="_blank" class="map-link">
-              <i class="fas fa-map"></i> 地図
-            </a>
           </div>
         </li>
         {% endfor %}
@@ -159,69 +121,6 @@
   color: #333;
   font-weight: 600;
   font-size: 1.1em;
-  margin-bottom: 8px;
-}
-.shelter-details {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.detail-item {
-  color: #666;
-  font-size: 0.9em;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.detail-item i {
-  color: #4a90e2;
-  font-size: 1em;
-  min-width: 16px;
-}
-.shelter-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.badge {
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.75em;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.badge.designated {
-  background: #e8f5e8;
-  color: #2d5a2d;
-}
-.badge.pet {
-  background: #fff3e0;
-  color: #8b4513;
-}
-.badge.barrier-free {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-.shelter-map {
-  margin-left: 18px;
-}
-.map-link {
-  background: #4a90e2;
-  color: #fff;
-  padding: 7px 16px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 0.98em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background 0.2s;
-}
-.map-link:hover {
-  background: #357abd;
 }
 .no-results {
   display: flex;
@@ -314,35 +213,13 @@
     font-size: 1.3em;
   }
   .shelter-item {
-    flex-direction: column;
-    align-items: flex-start;
     padding: 14px 12px;
   }
   .shelter-icon {
     margin-right: 12px;
-    margin-bottom: 8px;
   }
   .shelter-name {
     font-size: 1.0em;
-  }
-  .detail-item {
-    font-size: 0.85em;
-  }
-  .shelter-badges {
-    margin-top: 8px;
-  }
-  .badge {
-    font-size: 0.7em;
-    padding: 2px 6px;
-  }
-  .shelter-map {
-    margin-left: 0;
-    margin-top: 10px;
-    align-self: stretch;
-  }
-  .map-link {
-    justify-content: center;
-    width: 100%;
   }
   .navigation-buttons {
     flex-direction: column;

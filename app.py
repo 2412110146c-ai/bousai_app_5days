@@ -6,13 +6,6 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timedelta
 
-# 藤沢市の地区リスト
-FUJISAWA_DISTRICTS = [
-    "片瀬地区", "鵠沼地区", "辻堂地区", "村岡地区", "藤沢地区",
-    "明治地区", "善行地区", "湘南大庭地区", "六会地区", "湘南台地区",
-    "遠藤地区", "長後地区", "御所見地区"
-]
-
 # app.py はプロジェクト直下に置く。
 # 実体（templates / static / data）は bousai_app/ 配下にあるので、そこを参照する。
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -276,26 +269,17 @@ def logout():
 @app.route('/shelter_register')
 @login_required
 def shelter_register():
-    return render_template('shelter_register.html', districts=FUJISAWA_DISTRICTS)
+    return render_template('shelter_register.html')
 
 # 避難所検索ページ
 @app.route('/shelter_search', methods=['GET', 'POST'])
 def shelter_search():
     if request.method == 'POST':
-        district = request.form.get('district')
-        
-        results = []
-        for s in shelters:
-            # 地区でフィルタリング
-            if district and s.get('district') != district:
-                continue
-            results.append(s)
-        
         # 検索結果を search_results.html に渡す
-        return render_template('search_results.html', results=results)
+        return render_template('search_results.html', results=shelters)
 
     # GETリクエストの場合は検索ページを表示
-    return render_template('shelter_search.html', districts=FUJISAWA_DISTRICTS)
+    return render_template('shelter_search.html')
 
 # 全施設一覧ページ
 @app.route('/all_shelters')

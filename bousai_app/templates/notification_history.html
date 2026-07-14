@@ -12,42 +12,6 @@
       <p>過去に発表された気象警報・注意報の履歴を確認できます。</p>
     </div>
     
-    <!-- フィルター -->
-    <div class="filter-section">
-      <div class="filter-group">
-        <label>期間:</label>
-        <select id="periodFilter" class="filter-select">
-          <option value="all">すべて</option>
-          <option value="7days">過去7日間</option>
-          <option value="30days">過去30日間</option>
-          <option value="today">今日</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label>種類:</label>
-        <select id="typeFilter" class="filter-select">
-          <option value="all">すべて</option>
-          <option value="emergency">特別警報</option>
-          <option value="warning">警報</option>
-          <option value="advisory">注意報</option>
-          <option value="clear">解除</option>
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label>並び順:</label>
-        <select id="sortOrder" class="filter-select">
-          <option value="newest">新しい順</option>
-          <option value="oldest">古い順</option>
-        </select>
-      </div>
-      
-      <button id="resetFilter" class="btn-secondary">
-        <i class="fas fa-undo"></i> フィルタリセット
-      </button>
-    </div>
-    
     <!-- 統計情報 -->
     <div id="statsSection" class="stats-section" style="display: none;">
       <div class="stats-item">
@@ -81,10 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const historyList = document.getElementById('historyList');
   const loadingSpinner = document.getElementById('loadingSpinner');
   const noHistoryMessage = document.getElementById('noHistoryMessage');
-  const periodFilter = document.getElementById('periodFilter');
-  const typeFilter = document.getElementById('typeFilter');
-  const sortOrder = document.getElementById('sortOrder');
-  const resetFilter = document.getElementById('resetFilter');
   const statsSection = document.getElementById('statsSection');
   const displayCount = document.getElementById('displayCount');
   const totalCount = document.getElementById('totalCount');
@@ -208,87 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
       return dateString;
     }
   }
-  
-  // フィルタリング
-  function applyFilters() {
-    const period = periodFilter.value;
-    const type = typeFilter.value;
-    const sort = sortOrder.value;
-    
-    let filteredData = [...allHistoryData];
-    
-    // 期間フィルター
-    if (period !== 'all') {
-      const now = new Date();
-      let filterDate;
-      
-      switch (period) {
-        case '7days':
-          filterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case '30days':
-          filterDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        case 'today':
-          filterDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          break;
-      }
-      
-      if (filterDate) {
-        filteredData = filteredData.filter(item => {
-          const itemDate = parseCustomDate(item.timestamp);
-          return itemDate >= filterDate;
-        });
-      }
-    }
-    
-    // 種類フィルター
-    if (type !== 'all') {
-      filteredData = filteredData.filter(item => {
-        const warnings = item.warnings || [];
-        switch (type) {
-          case 'emergency':
-            return warnings.some(w => w.name.includes('特別警報'));
-          case 'warning':
-            return warnings.some(w => w.name.includes('警報') && !w.name.includes('特別警報'));
-          case 'advisory':
-            return warnings.some(w => w.name.includes('注意報'));
-          case 'clear':
-            return warnings.length === 0 || warnings.some(w => w.name.includes('解除'));
-          default:
-            return true;
-        }
-      });
-    }
-    
-    // ソート
-    filteredData.sort((a, b) => {
-      const dateA = parseCustomDate(a.timestamp);
-      const dateB = parseCustomDate(b.timestamp);
-      
-      if (sort === 'oldest') {
-        return dateA.getTime() - dateB.getTime(); // 古い順
-      } else {
-        return dateB.getTime() - dateA.getTime(); // 新しい順
-      }
-    });
-    
-    renderHistory(filteredData);
-  }
-  
-  // フィルターリセット
-  function resetFilters() {
-    periodFilter.value = 'all';
-    typeFilter.value = 'all';
-    sortOrder.value = 'newest';
-    renderHistory(allHistoryData);
-  }
-  
-  // イベントリスナー
-  periodFilter.addEventListener('change', applyFilters);
-  typeFilter.addEventListener('change', applyFilters);
-  sortOrder.addEventListener('change', applyFilters);
-  resetFilter.addEventListener('click', resetFilters);
   
   // 初期データ読み込み
   loadHistory();

@@ -9,41 +9,25 @@
       <h2>避難所検索</h2>
     </div>
     <div class="search-description">
-      <p>お住まいの地区の避難所を検索できます。地区を選択してください。</p>
+      <p>登録されている避難所を検索できます。</p>
     </div>
-    
+
     <!-- 検索結果なしのメッセージ -->
     {% if no_results %}
     <div class="alert alert-warning">
       <i class="fas fa-exclamation-triangle"></i>
-      {% if searched_district %}
-        「{{ searched_district }}」に該当する避難所が見つかりませんでした。
-      {% else %}
-        該当する避難所が見つかりませんでした。
-      {% endif %}
-      <br>検索条件を変更して再度お試しください。
+      該当する避難所が見つかりませんでした。
     </div>
     {% endif %}
-    
+
     <!-- エラーメッセージ -->
     {% if error %}
     <div class="alert alert-error">
       <i class="fas fa-exclamation-circle"></i> {{ message }}
     </div>
     {% endif %}
-    
+
     <form id="searchForm" class="search-form" method="post" action="/shelter_search">
-      <div class="form-row">
-        <div class="form-group">
-          <label>地区 <span class="required">*</span></label>
-          <select id="district" name="district" class="form-input">
-            <option value="">地区を選択してください</option>
-            {% for district in districts %}
-            <option value="{{ district }}" {% if searched_district == district %}selected{% endif %}>{{ district }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
       <div class="button-group">
         <button type="submit" class="main-button">
           <i class="fas fa-search"></i> 検索
@@ -109,38 +93,6 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.form-row {
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
-}
-
-.form-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #444;
-}
-
-.form-input {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1em;
-  transition: border-color 0.3s ease;
-}
-
-.form-input:focus {
-  border-color: #4a90e2;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
 }
 
 .button-group {
