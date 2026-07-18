@@ -1,22 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- 住民向けのお知らせ（指示ボードの「住民」宛で発信中のもの） -->
-<h2>住民の皆さまへのお知らせ</h2>
-{% if resident_notices %}
-<ul>
-  {% for notice in resident_notices %}
-  <li>
-    <strong>{{ notice.content }}</strong>
-    {% if notice.shelter %}（避難先: {{ notice.shelter }}）{% endif %}
-    <small>（{{ notice.created_at }} 発表）</small>
-  </li>
-  {% endfor %}
-</ul>
-{% else %}
-<p>現在、お知らせはありません。</p>
-{% endif %}
-
 <!-- 避難所マップ -->
 <h2>避難所マップ</h2>
 <div id="shelterMap" style="height: 300px;"></div>

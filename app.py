@@ -23,12 +23,6 @@ ADMIN_CREDENTIALS = {
     'admin': '123'
 }
 
-# 指示の宛先（部署 + 住民）
-TARGETS = ['防災課', '道路管理課', '住民']
-
-# 部署宛の指示の状態遷移
-NEXT_STATUS = {'未対応': '対応中', '対応中': '完了'}
-
 # ────────────────────────────────
 # 気象警報・注意報設定
 FUJISAWA_AREA_CODE = "1330800"  # 藤沢市のエリアコード
@@ -178,10 +172,10 @@ def get_fujisawa_warnings():
         }
 
 
-# トップページ：templates/index.html を返す（発信中の住民向け指示も表示する）
+# トップページ：templates/index.html を返す（住民向け指示も表示する）
 @app.route('/')
 def index():
-    resident_notices = [i for i in instructions if i.get('target') == '住民' and i.get('status') == '発信中']
+    resident_notices = [i for i in instructions if i.get('target') == '住民']
     return render_template('index.html', resident_notices=resident_notices)
 
 # ログインページ
@@ -239,45 +233,12 @@ def all_shelters():
     return render_template('search_results.html', results=shelters)
 
 
-# 指示ボード：宛先ごとの指示を登録し、一覧で確認・状態更新する
-@app.route('/board', methods=['GET', 'POST'])
+# 指示ボード：住民向けの指示を一覧で確認する
+@app.route('/board')
 @login_required
 def board():
-    if request.method == 'POST':
-        target = request.form.get('target', '')
-        content = request.form.get('content', '').strip()
-        if target in TARGETS and content:
-            instructions.insert(0, {
-                'id': max((i.get('id', 0) for i in instructions), default=0) + 1,
-                'target': target,
-                'content': content,
-                'shelter': request.form.get('shelter', '') if target == '住民' else '',
-                'status': '発信中' if target == '住民' else '未対応',
-                'created_at': get_japan_time(),
-                'updated_at': get_japan_time(),
-            })
-            save_instructions()
-        return redirect(url_for('board'))
-
-    return render_template('board.html', instructions=instructions, targets=TARGETS, shelters=shelters)
-
-# 指示の状態更新：部署宛は 未対応→対応中→完了、住民宛は 発信中→解除
-@app.route('/board/<int:instruction_id>/update', methods=['POST'])
-@login_required
-def update_instruction(instruction_id):
-    for inst in instructions:
-        if inst.get('id') != instruction_id:
-            continue
-        if inst['status'] in NEXT_STATUS:
-            inst['status'] = NEXT_STATUS[inst['status']]
-        elif inst['status'] == '発信中':
-            inst['status'] = '解除'
-        else:
-            break
-        inst['updated_at'] = get_japan_time()
-        save_instructions()
-        break
-    return redirect(url_for('board'))
+    resident_instructions = [i for i in instructions if i.get('target') == '住民']
+    return render_template('board.html', instructions=resident_instructions)
 
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
