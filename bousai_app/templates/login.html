@@ -17,24 +17,11 @@
   {% endif %}
 
   <p>
-    <label for="username">ユーザーID</label><br>
-    <input type="text" id="username" name="username" required
-           value="{{ request.form.username if request.form.username else '' }}">
-  </p>
-
-  <p>
-    <label for="password">パスワード</label><br>
+    <label for="password">パスワード（「123」と入力してください）</label><br>
     <input type="password" id="password" name="password" required>
   </p>
 
   <p><button type="submit">ログイン</button></p>
 </form>
 
-<h3>ログイン情報（デモ用アカウント）</h3>
-<ul>
-  <li>ID: admin / パスワード: password123</li>
-  <li>ID: manager / パスワード: shelter2025</li>
-</ul>
-
-<p><a href="/">トップページへ戻る</a></p>
 {% endblock %}

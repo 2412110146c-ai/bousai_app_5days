@@ -20,8 +20,7 @@ app.secret_key = 'your-secret-key-here'
 
 # 管理者認証情報
 ADMIN_CREDENTIALS = {
-    'admin': 'password123',
-    'manager': 'shelter2025'
+    'admin': '123'
 }
 
 # 指示の宛先（部署 + 住民）
@@ -196,16 +195,20 @@ def login():
         next_url = url_for('shelter_register')
 
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
 
         # 認証チェック
-        if ADMIN_CREDENTIALS.get(username) == password:
+        username = next(
+            (name for name, registered_password in ADMIN_CREDENTIALS.items()
+             if registered_password == password),
+            None
+        )
+        if username:
             session['logged_in'] = True
             session['username'] = username
             # ログイン成功後は指定されたページにリダイレクト
             return redirect(next_url)
-        return render_template('login.html', error=True, message="IDまたはパスワードが正しくありません。", next=next_url)
+        return render_template('login.html', error=True, message="パスワードが正しくありません。", next=next_url)
 
     # ログイン済みの場合は指定されたページにリダイレクト
     if session.get('logged_in'):
