@@ -1,44 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard-container">
-  <!-- 災害情報通知履歴 -->
-  <div class="card history-card">
-    <div class="card-header">
-      <i class="fas fa-bell"></i>
-      <h2>気象警報・注意報履歴</h2>
-    </div>
-    <div class="history-description">
-      <p>過去に発表された気象警報・注意報の履歴を確認できます。</p>
-    </div>
-    
-    <!-- 統計情報 -->
-    <div id="statsSection" class="stats-section" style="display: none;">
-      <div class="stats-item">
-        <span class="stats-label">表示件数:</span>
-        <span id="displayCount" class="stats-value">0</span>
-      </div>
-      <div class="stats-item">
-        <span class="stats-label">総件数:</span>
-        <span id="totalCount" class="stats-value">0</span>
-      </div>
-    </div>
-    
-    <!-- 履歴リスト -->
-    <div id="historyList" class="history-list">
-      <div class="loading" id="loadingSpinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <span>履歴を読み込み中...</span>
-      </div>
-    </div>
-    
-    <!-- 履歴がない場合のメッセージ -->
-    <div id="noHistoryMessage" class="no-history" style="display: none;">
-      <i class="fas fa-info-circle"></i>
-      <p>表示する履歴がありません。</p>
-    </div>
-  </div>
+<h2>気象警報・注意報履歴</h2>
+<p>過去に発表された気象警報・注意報の履歴を確認できます。</p>
+
+<!-- 統計情報 -->
+<p id="statsSection" style="display: none;">
+  表示件数: <span id="displayCount">0</span> 件 / 総件数: <span id="totalCount">0</span> 件
+</p>
+
+<!-- 履歴リスト -->
+<div id="historyList">
+  <p id="loadingSpinner">履歴を読み込み中...</p>
 </div>
+
+<!-- 履歴がない場合のメッセージ -->
+<p id="noHistoryMessage" style="display: none;">表示する履歴がありません。</p>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -48,9 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const statsSection = document.getElementById('statsSection');
   const displayCount = document.getElementById('displayCount');
   const totalCount = document.getElementById('totalCount');
-  
+
   let allHistoryData = [];
-  
+
   // 履歴データを取得
   function loadHistory() {
     fetch('/api/warning_history')
@@ -63,11 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
           const dateB = parseCustomDate(b.timestamp);
           return dateB.getTime() - dateA.getTime(); // 新しい順
         });
-        
+
         // 統計情報を更新
         totalCount.textContent = allHistoryData.length;
-        statsSection.style.display = 'flex';
-        
+        statsSection.style.display = 'block';
+
         renderHistory(allHistoryData);
         loadingSpinner.style.display = 'none';
       })
@@ -77,65 +54,40 @@ document.addEventListener('DOMContentLoaded', function() {
         showNoHistory();
       });
   }
-  
+
   // 履歴を表示
   function renderHistory(historyData) {
     if (!historyData || historyData.length === 0) {
       showNoHistory();
       return;
     }
-    
-    const historyHTML = historyData.map(item => createHistoryItemHTML(item)).join('');
-    historyList.innerHTML = historyHTML;
+
+    const itemsHtml = historyData.map(item => {
+      const warnings = item.warnings || [];
+      const names = warnings.length > 0
+        ? warnings.map(w => w.name).join('、')
+        : '警報・注意報なし';
+      return `<li>${formatDate(item.report_time)}　${item.area_name}: ${names}</li>`;
+    }).join('');
+
+    historyList.innerHTML = '<ul>' + itemsHtml + '</ul>';
     noHistoryMessage.style.display = 'none';
-    
+
     // 表示件数を更新
     displayCount.textContent = historyData.length;
   }
-  
+
   // 履歴がない場合の表示
   function showNoHistory() {
     historyList.innerHTML = '';
     noHistoryMessage.style.display = 'block';
     displayCount.textContent = '0';
   }
-  
-  // 履歴アイテムのHTMLを生成
-  function createHistoryItemHTML(item) {
-    const warnings = item.warnings || [];
-    const warningBadges = warnings.map(warning => {
-      let badgeClass = 'warning-advisory';
-      if (warning.name.includes('特別警報')) {
-        badgeClass = 'warning-emergency';
-      } else if (warning.name.includes('警報') && !warning.name.includes('特別警報')) {
-        badgeClass = 'warning-warning';
-      } else if (warning.name.includes('解除')) {
-        badgeClass = 'warning-clear';
-      }
-      return `<span class="warning-badge ${badgeClass}">${warning.name}</span>`;
-    }).join('');
-    
-    return `
-      <div class="history-item">
-        <div class="history-header">
-          <div class="history-timestamp">
-            <i class="fas fa-clock"></i> 気象庁発表時刻: ${formatDate(item.report_time)}
-          </div>
-        </div>
-        <div class="warnings-list">
-          ${warningBadges || '<span class="warning-badge warning-clear">警報・注意報なし</span>'}
-          <div class="history-metadata">
-            <span><i class="fas fa-map-marker-alt"></i> ${item.area_name}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  
+
   // 日付フォーマット（カスタム日付形式の解析機能付き）
   function parseCustomDate(dateString) {
     if (!dateString) return new Date(0);
-    
+
     // "2025年06月07日 15:30" 形式の日本語日付を解析
     const japaneseMatch = dateString.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{1,2})/);
     if (japaneseMatch) {
@@ -146,17 +98,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const minute = parseInt(japaneseMatch[5]);
       return new Date(year, month, day, hour, minute);
     }
-    
+
     // ISO形式や一般的な形式を試す
     const isoDate = new Date(dateString);
     if (!isNaN(isoDate.getTime())) {
       return isoDate;
     }
-    
+
     // 解析失敗時は古い日付を返す
     return new Date(0);
   }
-  
+
   // 日付フォーマット
   function formatDate(dateString) {
     if (!dateString || dateString === '不明') return dateString;
@@ -168,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return dateString;
     }
   }
-  
+
   // 初期データ読み込み
   loadHistory();
 });

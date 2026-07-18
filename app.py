@@ -77,11 +77,11 @@ def get_japan_time():
 
 
 def get_warning_codes():
-    
-    """警報・注意報のコード一覧を取得する"""    
+
+    """警報・注意報のコード一覧を取得する"""
     return {
         "00": "解除",
-        "02": "暴風雪警報", 
+        "02": "暴風雪警報",
         "03": "大雨警報",
         "04": "洪水警報",
         "05": "暴風警報",
@@ -104,7 +104,7 @@ def get_warning_codes():
         "24": "霜注意報",
         "25": "着氷注意報",
         "26": "着雪注意報",
-        "27": "その他の注意報", 
+        "27": "その他の注意報",
         "32": "暴風雪特別警報",
         "33": "大雨特別警報",
         "35": "暴風特別警報",
@@ -120,14 +120,14 @@ def get_fujisawa_warnings():
         # 神奈川県の警報・注意報データを取得
         warning_info = urllib.request.urlopen(url=WARNING_URL, timeout=10)
         warning_data = json.loads(warning_info.read())
-        
+
         # 警報・注意報コードマップを取得
         warning_codes = get_warning_codes()
-        
-        # 発表時刻を取得        
+
+        # 発表時刻を取得
         report_datetime = warning_data.get("reportDatetime", "")
         if report_datetime:
-            try:               
+            try:
                 # ISO形式の時刻をパース（例: "2025-01-15T04:14:00+09:00"）
                 if report_datetime.endswith('Z'):
                     # UTC時刻の場合は+9時間してJSTに変換
@@ -139,25 +139,25 @@ def get_fujisawa_warnings():
                 else:
                     # その他の形式はそのままパース
                     jst_time = datetime.fromisoformat(report_datetime)
-                                
+
                 formatted_time = jst_time.strftime("%Y年%m月%d日 %H:%M")
             except Exception as e:
                 formatted_time = report_datetime
         else:
             formatted_time = "不明"
-        
+
         # 藤沢市のデータを検索
-        if "areaTypes" in warning_data: 
-                       
-            for area_type in warning_data["areaTypes"]: 
-                if "areas" in area_type:                    
-                    for area in area_type["areas"]: 
+        if "areaTypes" in warning_data:
+
+            for area_type in warning_data["areaTypes"]:
+                if "areas" in area_type:
+                    for area in area_type["areas"]:
                         if area.get("code") == FUJISAWA_AREA_CODE:
                             # 藤沢市の警報・注意報を取得
                             warnings = "___LIST_WARNINGS___" # [] <- リスト初期化をプレースホルダーに
                             if isinstance(warnings, str): # プレースホルダーの場合のフォールバック
                                 warnings = []
-                            
+
                             for warning in area.get("warnings", []):
                                 status = warning.get("status", "")
                                 if status in ["発表", "継続"]:
@@ -169,18 +169,18 @@ def get_fujisawa_warnings():
                                         "code": code,
                                         "status": status
                                     })
-                                                        
+
                             result = {
                                 "area_name": area.get("name", "藤沢市"),
                                 "warnings": warnings,
                                 "report_time": formatted_time,
                                 "last_fetch_time": get_japan_time()
                             }
-                            
+
                             # 履歴に保存
                             save_warning_history(result)
                             return result
-            
+
         # 藤沢市のデータが見つからない場合
         result = {
             "area_name": "藤沢市",
@@ -188,11 +188,11 @@ def get_fujisawa_warnings():
             "report_time": formatted_time,
             "last_fetch_time": get_japan_time()
         }
-        
+
         # 履歴に保存
         save_warning_history(result)
         return result
-        
+
     except urllib.error.URLError as e:
         return {
             "area_name": "藤沢市",
@@ -232,18 +232,18 @@ def index():
 def login():
     # リダイレクト先を取得（デフォルトは避難所登録画面）
     next_url = request.args.get('next') or request.form.get('next')
-    
+
     # 安全でないURLの場合はデフォルトページにリダイレクト
     if next_url and not is_safe_url(next_url):
         next_url = None
-    
+
     if not next_url:
         next_url = url_for('shelter_register')
-    
+
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
-        
+
         # 認証チェック
         if username in ADMIN_CREDENTIALS and ADMIN_CREDENTIALS[username] == password:
             session['logged_in'] = True
@@ -252,11 +252,11 @@ def login():
             return redirect(next_url)
         else:
             return render_template('login.html', error=True, message="IDまたはパスワードが正しくありません。", next=next_url)
-    
+
     # ログイン済みの場合は指定されたページにリダイレクト
     if 'logged_in' in session and session['logged_in']:
         return redirect(next_url)
-    
+
     return render_template('login.html', next=next_url)
 
 # ログアウト
@@ -337,12 +337,12 @@ def api_warning_history():
     """気象警報・注意報の履歴をJSON形式で返すAPI"""
     # クエリパラメータで件数を制限
     limit = request.args.get('limit', type=int)
-    
+
     if limit and limit > 0:
         limited_history = notification_history[:limit]
     else:
         limited_history = notification_history
-    
+
     return jsonify({
         "total_count": len(notification_history),
         "returned_count": len(limited_history),
@@ -352,13 +352,13 @@ def api_warning_history():
 def save_warning_history(warnings_data):
     """警報・注意報の履歴を保存する"""
     global notification_history
-    
+
     # エラーの場合は履歴に保存しない
     if warnings_data.get('error', False):
         return
-    
+
     current_time = get_japan_time()
-    
+
     # 新しい履歴エントリを作成
     history_entry = {
         "timestamp": current_time,
@@ -370,24 +370,24 @@ def save_warning_history(warnings_data):
         "has_warning": any("警報" in w.get("name", "") and "特別警報" not in w.get("name", "") for w in warnings_data.get("warnings", [])),
         "has_advisory": any("注意報" in w.get("name", "") for w in warnings_data.get("warnings", []))
     }
-    
+
     # 最新の履歴と比較して、内容が変わった場合のみ保存
     if notification_history:
         last_entry = notification_history[0]
         # 警報・注意報の内容が同じ場合は保存しない
         last_warnings = set((w.get("name", ""), w.get("status", "")) for w in last_entry.get("warnings", []))
         current_warnings = set((w.get("name", ""), w.get("status", "")) for w in warnings_data.get("warnings", []))
-        
+
         if last_warnings == current_warnings:
             return
-    
+
     # 履歴の先頭に追加（最新が一番上）
     notification_history.insert(0, history_entry)
-    
+
     # 履歴は最大100件まで保持
     if len(notification_history) > 100:
         notification_history = notification_history[:100]
-    
+
     # ファイルに保存
     try:
         with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
