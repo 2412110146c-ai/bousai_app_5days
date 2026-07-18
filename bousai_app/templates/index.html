@@ -9,22 +9,7 @@
 <h2>藤沢市 気象警報・注意報</h2>
 <p>10分おきに自動更新されます。</p>
 <div id="weatherContent">
-  {% if weather_warnings %}
-    <p>対象地域: {{ weather_warnings.area_name }}</p>
-    {% if weather_warnings.warnings %}
-      <ul>
-        {% for warning in weather_warnings.warnings %}
-        <li>{{ warning.name }}（{{ warning.status }}）</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>現在、警報・注意報は発表されていません</p>
-    {% endif %}
-    <p>最終確認: <span id="lastFetchTime">{{ weather_warnings.last_fetch_time if weather_warnings.last_fetch_time else '読み込み中...' }}</span></p>
-    <p>気象庁最終発表: {{ weather_warnings.report_time }}</p>
-  {% else %}
-    <p>気象情報の取得に失敗しました</p>
-  {% endif %}
+  <p>読み込み中...</p>
 </div>
 
 <!-- Leaflet の読み込み -->
@@ -81,11 +66,9 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
-    // 10分（600,000ミリ秒）おきに自動更新
+    // 初回表示＋10分（600,000ミリ秒）おきに自動更新
+    updateWeatherWarnings();
     setInterval(updateWeatherWarnings, 600000);
-
-    // ページ読み込み後、5秒後に初回更新（初期データが古い可能性があるため）
-    setTimeout(updateWeatherWarnings, 5000);
 });
 </script>
 {% endblock %}
