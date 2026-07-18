@@ -215,13 +215,8 @@ def shelter_register():
     return render_template('shelter_register.html')
 
 # 避難所検索ページ
-@app.route('/shelter_search', methods=['GET', 'POST'])
+@app.route('/shelter_search')
 def shelter_search():
-    if request.method == 'POST':
-        # 検索結果を search_results.html に渡す
-        return render_template('search_results.html', results=shelters)
-
-    # GETリクエストの場合は検索ページを表示
     return render_template('shelter_search.html')
 
 # 全施設一覧ページ

@@ -2,21 +2,7 @@
 
 {% block content %}
 <h2>避難所検索</h2>
-<p>登録されている避難所を検索できます。</p>
-
-<!-- 検索結果なしのメッセージ -->
-{% if no_results %}
-  <p>該当する避難所が見つかりませんでした。</p>
-{% endif %}
-
-<!-- エラーメッセージ -->
-{% if error %}
-  <p>{{ message }}</p>
-{% endif %}
-
-<form method="post" action="/shelter_search">
-  <button type="submit">検索</button>
-</form>
+<p>登録されている避難所を確認できます。</p>
 
 <p><a href="/all_shelters">全施設一覧</a></p>
 {% endblock %}
