@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}指示ボード - 防災アプリ{% endblock %}
+
+{% block content %}
+<h2>指示ボード</h2>
+<p>宛先ごとの指示を登録・確認できます。宛先が「住民」の指示はトップページにも表示されます。</p>
+
+<!-- 新規登録 -->
+<h3>新規登録</h3>
+<form method="post" action="/board">
+  <p>
+    宛先:
+    <select name="target" id="targetSelect">
+      {% for target in targets %}
+      <option value="{{ target }}">{{ target }}</option>
+      {% endfor %}
+    </select>
+    内容:
+    <input type="text" name="content" size="40" required>
+    <span id="shelterField" style="display: none;">
+      避難先:
+      <select name="shelter">
+        {% for shelter in shelters %}
+        <option value="{{ shelter.name }}">{{ shelter.name }}</option>
+        {% endfor %}
+      </select>
+    </span>
+    <button type="submit">登録</button>
+  </p>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 宛先が「住民」のときだけ避難先の選択欄を表示する
+    const targetSelect = document.getElementById('targetSelect');
+    const shelterField = document.getElementById('shelterField');
+    function toggleShelterField() {
+        shelterField.style.display = targetSelect.value === '住民' ? '' : 'none';
+    }
+    targetSelect.addEventListener('change', toggleShelterField);
+    toggleShelterField();
+});
+</script>
+
+<!-- 指示一覧 -->
+<h3>指示一覧</h3>
+{% if instructions %}
+<table border="1" cellpadding="5">
+  <tr>
+    <th>宛先</th><th>内容</th><th>状態</th><th>登録日時</th><th>更新日時</th><th>操作</th>
+  </tr>
+  {% for inst in instructions %}
+  <tr>
+    <td>{{ inst.target }}</td>
+    <td>{{ inst.content }}{% if inst.shelter %}（避難先: {{ inst.shelter }}）{% endif %}</td>
+    <td>{{ inst.status }}</td>
+    <td>{{ inst.created_at }}</td>
+    <td>{{ inst.updated_at }}</td>
+    <td>
+      {% if inst.status == '未対応' %}
+        <form method="post" action="/board/{{ inst.id }}/update"><button type="submit">対応を開始</button></form>
+      {% elif inst.status == '対応中' %}
+        <form method="post" action="/board/{{ inst.id }}/update"><button type="submit">完了にする</button></form>
+      {% elif inst.status == '発信中' %}
+        <form method="post" action="/board/{{ inst.id }}/update"><button type="submit">解除する</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>登録されている指示はありません。</p>
+{% endif %}
+{% endblock %}

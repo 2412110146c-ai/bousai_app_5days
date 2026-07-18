@@ -24,6 +24,12 @@ ADMIN_CREDENTIALS = {
     'manager': 'shelter2025'
 }
 
+# 指示の宛先（部署 + 住民）
+TARGETS = ['防災課', '道路管理課', '住民']
+
+# 部署宛の指示の状態遷移
+NEXT_STATUS = {'未対応': '対応中', '対応中': '完了'}
+
 # ────────────────────────────────
 # 気象警報・注意報設定
 FUJISAWA_AREA_CODE = "1330800"  # 藤沢市のエリアコード
@@ -70,7 +76,7 @@ WARNING_CODES = {
 # ────────────────────────────────
 # サンプルデータの読み込み
 DATA_FILE = os.path.join(APP_DIR, 'data', 'shelters.json')
-HISTORY_FILE = os.path.join(APP_DIR, 'data', 'notification_history.json')
+INSTRUCTIONS_FILE = os.path.join(APP_DIR, 'data', 'instructions.json')
 
 def load_json(path, default):
     """JSONファイルを読み込む（存在しない・壊れている場合は default を返す）"""
@@ -81,7 +87,15 @@ def load_json(path, default):
         return default
 
 shelters = load_json(DATA_FILE, [])
-notification_history = load_json(HISTORY_FILE, [])
+instructions = load_json(INSTRUCTIONS_FILE, [])
+
+def save_instructions():
+    """指示ボードのデータをファイルに保存する"""
+    try:
+        with open(INSTRUCTIONS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(instructions, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 # ────────────────────────────────
 
 # ────────────────────────────────
@@ -148,16 +162,12 @@ def get_fujisawa_warnings():
             if w.get("status") in ("発表", "継続")
         ]
 
-        result = {
+        return {
             "area_name": area.get("name", "藤沢市") if area else "藤沢市",
             "warnings": warnings,
             "report_time": format_report_time(warning_data.get("reportDatetime", "")),
             "last_fetch_time": get_japan_time()
         }
-
-        # 履歴に保存
-        save_warning_history(result)
-        return result
 
     except Exception:
         return {
@@ -169,10 +179,11 @@ def get_fujisawa_warnings():
         }
 
 
-# トップページ：templates/index.html を返す
+# トップページ：templates/index.html を返す（発信中の住民向け指示も表示する）
 @app.route('/')
 def index():
-    return render_template('index.html')
+    resident_notices = [i for i in instructions if i.get('target') == '住民' and i.get('status') == '発信中']
+    return render_template('index.html', resident_notices=resident_notices)
 
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
@@ -225,10 +236,45 @@ def all_shelters():
     return render_template('search_results.html', results=shelters)
 
 
-# 災害情報通知履歴ページ：templates/notification_history.html を返す
-@app.route('/notification_history')
-def notification_history_page():
-    return render_template('notification_history.html', history_count=len(notification_history))
+# 指示ボード：宛先ごとの指示を登録し、一覧で確認・状態更新する
+@app.route('/board', methods=['GET', 'POST'])
+@login_required
+def board():
+    if request.method == 'POST':
+        target = request.form.get('target', '')
+        content = request.form.get('content', '').strip()
+        if target in TARGETS and content:
+            instructions.insert(0, {
+                'id': max((i.get('id', 0) for i in instructions), default=0) + 1,
+                'target': target,
+                'content': content,
+                'shelter': request.form.get('shelter', '') if target == '住民' else '',
+                'status': '発信中' if target == '住民' else '未対応',
+                'created_at': get_japan_time(),
+                'updated_at': get_japan_time(),
+            })
+            save_instructions()
+        return redirect(url_for('board'))
+
+    return render_template('board.html', instructions=instructions, targets=TARGETS, shelters=shelters)
+
+# 指示の状態更新：部署宛は 未対応→対応中→完了、住民宛は 発信中→解除
+@app.route('/board/<int:instruction_id>/update', methods=['POST'])
+@login_required
+def update_instruction(instruction_id):
+    for inst in instructions:
+        if inst.get('id') != instruction_id:
+            continue
+        if inst['status'] in NEXT_STATUS:
+            inst['status'] = NEXT_STATUS[inst['status']]
+        elif inst['status'] == '発信中':
+            inst['status'] = '解除'
+        else:
+            break
+        inst['updated_at'] = get_japan_time()
+        save_instructions()
+        break
+    return redirect(url_for('board'))
 
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
@@ -253,60 +299,6 @@ def get_shelters():
 def api_weather_warnings():
     """気象警報・注意報をJSON形式で返すAPI"""
     return jsonify(get_fujisawa_warnings())
-
-# 気象警報・注意報履歴API
-@app.route('/api/warning_history')
-def api_warning_history():
-    """気象警報・注意報の履歴をJSON形式で返すAPI"""
-    # クエリパラメータで件数を制限
-    limit = request.args.get('limit', type=int)
-    limited_history = notification_history[:limit] if limit and limit > 0 else notification_history
-
-    return jsonify({
-        "total_count": len(notification_history),
-        "returned_count": len(limited_history),
-        "history": limited_history
-    })
-
-def save_warning_history(warnings_data):
-    """警報・注意報の履歴を保存する"""
-    global notification_history
-
-    # エラーの場合は履歴に保存しない
-    if warnings_data.get('error', False):
-        return
-
-    ws = warnings_data.get("warnings", [])
-    names = [w.get("name", "") for w in ws]
-
-    # 最新の履歴と比較して、内容が同じ場合は保存しない
-    if notification_history:
-        last_ws = notification_history[0].get("warnings", [])
-        if {(w.get("name", ""), w.get("status", "")) for w in last_ws} == \
-           {(w.get("name", ""), w.get("status", "")) for w in ws}:
-            return
-
-    history_entry = {
-        "timestamp": get_japan_time(),
-        "area_name": warnings_data.get("area_name", "藤沢市"),
-        "report_time": warnings_data.get("report_time", "不明"),
-        "warnings": ws,
-        "warning_count": len(ws),
-        "has_emergency": any("特別警報" in n for n in names),
-        "has_warning": any("警報" in n and "特別警報" not in n for n in names),
-        "has_advisory": any("注意報" in n for n in names)
-    }
-
-    # 履歴の先頭に追加（最新が一番上）、最大100件まで保持
-    notification_history.insert(0, history_entry)
-    notification_history = notification_history[:100]
-
-    # ファイルに保存
-    try:
-        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(notification_history, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
