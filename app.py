@@ -25,9 +25,9 @@ ADMIN_CREDENTIALS = {
 
 # ────────────────────────────────
 # 気象警報・注意報設定
-FUJISAWA_AREA_CODE = "1330800"  # 藤沢市のエリアコード
+FUJISAWA_AREA_CODE = "1420500"  # 藤沢市の二次細分区域コード
 
-WARNING_URL = "https://www.jma.go.jp/bosai/warning/data/warning/140000.json"
+WARNING_URL = "https://www.jma.go.jp/bosai/warning/data/r8/140000.json"
 
 JST = timezone(timedelta(hours=9))
 
@@ -35,13 +35,14 @@ JST = timezone(timedelta(hours=9))
 WARNING_CODES = {
     "00": "解除",
     "02": "暴風雪警報",
-    "03": "大雨警報",
+    "03": "レベル3大雨警報",
     "04": "洪水警報",
     "05": "暴風警報",
     "06": "大雪警報",
     "07": "波浪警報",
-    "08": "高潮警報",
-    "10": "大雨注意報",
+    "08": "レベル3高潮警報",
+    "09": "レベル3土砂災害警報",
+    "10": "レベル2大雨注意報",
     "12": "大雪注意報",
     "13": "風雪注意報",
     "14": "雷注意報",
@@ -49,7 +50,7 @@ WARNING_CODES = {
     "16": "波浪注意報",
     "17": "融雪注意報",
     "18": "洪水注意報",
-    "19": "高潮注意報",
+    "19": "レベル2高潮注意報",
     "20": "濃霧注意報",
     "21": "乾燥注意報",
     "22": "なだれ注意報",
@@ -58,12 +59,17 @@ WARNING_CODES = {
     "25": "着氷注意報",
     "26": "着雪注意報",
     "27": "その他の注意報",
+    "29": "レベル2土砂災害注意報",
     "32": "暴風雪特別警報",
-    "33": "大雨特別警報",
+    "33": "レベル5大雨特別警報",
     "35": "暴風特別警報",
     "36": "大雪特別警報",
     "37": "波浪特別警報",
-    "38": "高潮特別警報"
+    "38": "レベル5高潮特別警報",
+    "39": "レベル5土砂災害特別警報",
+    "43": "レベル4大雨危険警報",
+    "48": "レベル4高潮危険警報",
+    "49": "レベル4土砂災害危険警報"
 }
 
 # ────────────────────────────────
@@ -132,33 +138,82 @@ def filter_shelters(district=None):
     return [s for s in shelters if not district or s.get('district') == district]
 
 
+def parse_fujisawa_warnings(warning_data):
+    """気象庁の新形式JSONから藤沢市の発表・継続中の情報を抽出する"""
+    if not isinstance(warning_data, list):
+        raise ValueError("気象庁の警報・注意報データが新形式の配列ではありません")
+
+    warnings = []
+    seen_codes = set()
+    report_datetimes = []
+
+    for report in warning_data:
+        if not isinstance(report, dict):
+            continue
+
+        report_datetime = report.get("reportDatetime")
+        if isinstance(report_datetime, str) and report_datetime:
+            report_datetimes.append(report_datetime)
+
+        warning = report.get("warning")
+        if not isinstance(warning, dict):
+            continue
+
+        class20_items = warning.get("class20Items", [])
+        if not isinstance(class20_items, list):
+            continue
+
+        area = next(
+            (
+                item for item in class20_items
+                if isinstance(item, dict)
+                and item.get("areaCode") == FUJISAWA_AREA_CODE
+            ),
+            None
+        )
+        if not area:
+            continue
+
+        kinds = area.get("kinds", [])
+        if not isinstance(kinds, list):
+            continue
+
+        for kind in kinds:
+            if not isinstance(kind, dict):
+                continue
+
+            status = kind.get("status", "")
+            code = kind.get("code", "")
+            if status not in ("発表", "継続") or not code or code in seen_codes:
+                continue
+
+            warnings.append({
+                "name": WARNING_CODES.get(
+                    code,
+                    f"不明な警報・注意報 (コード: {code})"
+                ),
+                "code": code,
+                "status": status
+            })
+            seen_codes.add(code)
+
+    latest_report_datetime = max(report_datetimes, default="")
+    return warnings, latest_report_datetime
+
+
 def get_fujisawa_warnings():
     """藤沢市の警報・注意報を取得する"""
     try:
-        # 神奈川県の警報・注意報データを取得
+        # 神奈川県の新形式（令和8年～）警報・注意報データを取得
         with urllib.request.urlopen(url=WARNING_URL, timeout=10) as res:
             warning_data = json.loads(res.read())
 
-        # 藤沢市のデータを検索
-        area = next((a for area_type in warning_data.get("areaTypes", [])
-                       for a in area_type.get("areas", [])
-                       if a.get("code") == FUJISAWA_AREA_CODE), None)
-
-        # 発表・継続中の警報・注意報を抽出
-        warnings = [
-            {
-                "name": WARNING_CODES.get(w.get("code", ""), f"不明な警報・注意報 (コード: {w.get('code', '')})"),
-                "code": w.get("code", ""),
-                "status": w.get("status", "")
-            }
-            for w in (area.get("warnings", []) if area else [])
-            if w.get("status") in ("発表", "継続")
-        ]
+        warnings, report_datetime = parse_fujisawa_warnings(warning_data)
 
         return {
-            "area_name": area.get("name", "藤沢市") if area else "藤沢市",
+            "area_name": "藤沢市",
             "warnings": warnings,
-            "report_time": format_report_time(warning_data.get("reportDatetime", "")),
+            "report_time": format_report_time(report_datetime),
             "last_fetch_time": get_japan_time()
         }
 
