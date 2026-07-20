@@ -25,9 +25,15 @@ ADMIN_CREDENTIALS = {
 
 # ────────────────────────────────
 # 気象警報・注意報設定
-FUJISAWA_AREA_CODE = "1420500"  # 藤沢市の二次細分区域コード
+PREFECTURE_CODE = "020000"  # 青森県
+AREA_NAME = "青森市"
 
-WARNING_URL = "https://www.jma.go.jp/bosai/warning/data/r8/140000.json"
+# ワークショップ課題：青森市の市区町村コードに変更する
+AREA_CODE = "1420500"
+
+WARNING_URL = (
+    f"https://www.jma.go.jp/bosai/warning/data/r8/{PREFECTURE_CODE}.json"
+)
 
 JST = timezone(timedelta(hours=9))
 
@@ -138,8 +144,8 @@ def filter_shelters(district=None):
     return [s for s in shelters if not district or s.get('district') == district]
 
 
-def parse_fujisawa_warnings(warning_data):
-    """気象庁の新形式JSONから藤沢市の発表・継続中の情報を抽出する"""
+def parse_area_warnings(warning_data):
+    """気象庁の新形式JSONから対象市区町村の発表・継続中の情報を抽出する"""
     if not isinstance(warning_data, list):
         raise ValueError("気象庁の警報・注意報データが新形式の配列ではありません")
 
@@ -167,7 +173,7 @@ def parse_fujisawa_warnings(warning_data):
             (
                 item for item in class20_items
                 if isinstance(item, dict)
-                and item.get("areaCode") == FUJISAWA_AREA_CODE
+                and item.get("areaCode") == AREA_CODE
             ),
             None
         )
@@ -201,17 +207,17 @@ def parse_fujisawa_warnings(warning_data):
     return warnings, latest_report_datetime
 
 
-def get_fujisawa_warnings():
-    """藤沢市の警報・注意報を取得する"""
+def get_weather_warnings():
+    """対象市区町村の警報・注意報を取得する"""
     try:
-        # 神奈川県の新形式（令和8年～）警報・注意報データを取得
+        # 青森県の新形式（令和8年～）警報・注意報データを取得
         with urllib.request.urlopen(url=WARNING_URL, timeout=10) as res:
             warning_data = json.loads(res.read())
 
-        warnings, report_datetime = parse_fujisawa_warnings(warning_data)
+        warnings, report_datetime = parse_area_warnings(warning_data)
 
         return {
-            "area_name": "藤沢市",
+            "area_name": AREA_NAME,
             "warnings": warnings,
             "report_time": format_report_time(report_datetime),
             "last_fetch_time": get_japan_time()
@@ -219,7 +225,7 @@ def get_fujisawa_warnings():
 
     except Exception:
         return {
-            "area_name": "藤沢市",
+            "area_name": AREA_NAME,
             "warnings": [],
             "report_time": "取得失敗",
             "last_fetch_time": get_japan_time(),
@@ -317,7 +323,7 @@ def get_shelters():
 @app.route('/api/weather_warnings')
 def api_weather_warnings():
     """気象警報・注意報をJSON形式で返すAPI"""
-    return jsonify(get_fujisawa_warnings())
+    return jsonify(get_weather_warnings())
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
