@@ -1,23 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="page-container">
+<section class="content-card">
 <h2>避難所登録</h2>
 <p>新しい避難所情報を登録します。</p>
 
 <!-- 成功・エラーメッセージ表示 -->
 {% if success %}
-  <p>{{ message }}</p>
+  <p class="message-success">{{ message }}</p>
 {% endif %}
 
 {% if error %}
-  <p>{{ message }}</p>
+  <p class="message-error">{{ message }}</p>
 {% endif %}
 
 <form method="POST">
   <p>
-    <label for="name">避難所名（必須）</label><br>
-    <input type="text" id="name" name="name">
+    <label class="form-label" for="name">避難所名（必須）</label>
+    <input class="form-field" type="text" id="name" name="name">
   </p>
-  <p><button type="submit">登録</button></p>
+  <p><button class="primary-button" type="submit">登録</button></p>
 </form>
+</section>
+</div>
 {% endblock %}

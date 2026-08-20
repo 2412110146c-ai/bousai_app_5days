@@ -4,30 +4,171 @@
   <meta charset="utf-8">
   <title>{% block title %}防災アプリ{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --blue: #2459a8;
+      --blue-dark: #174589;
+      --ink: #18385f;
+      --muted: #68788e;
+      --page: #f6f9fc;
+      --line: #e7edf4;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--page);
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    }
+
+    .site-header {
+      min-height: 0;
+      color: #fff;
+      background: transparent;
+      box-shadow: 0 2px 12px rgba(24, 56, 95, .16);
+    }
+
+    .site-title {
+      display: block;
+      padding: 20px max(24px, calc((100% - 1180px) / 2));
+      color: #fff;
+      background: linear-gradient(115deg, var(--blue-dark), var(--blue));
+      font-size: 28px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: .04em;
+    }
+
+    .menu-button {
+      display: none;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      min-height: 58px;
+      padding: 0 max(24px, calc((100% - 1180px) / 2));
+      background: #fff;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .site-nav a {
+      padding: 9px 10px;
+      color: #6fa8e8;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .site-nav a:hover { background: #f1f6fd; }
+    .site-nav .nav-general-home, .site-nav .nav-general-result { color: #6fa8e8; }
+    .site-nav .nav-general-search { color: #f08d8d; }
+    .site-nav .nav-divider { width: 1px; height: 30px; margin: 0 14px; background: #aeb6c0; }
+    .site-nav .admin-link { color: #111; }
+
+    main { min-height: calc(100vh - 70px); }
+
+    .page-container {
+      width: min(100% - 32px, 940px);
+      margin: 34px auto 60px;
+    }
+
+    .content-card {
+      padding: 28px;
+      background: #fff;
+      border: 1px solid rgba(220, 229, 240, .75);
+      border-radius: 16px;
+      box-shadow: 0 7px 25px rgba(38, 75, 118, .08);
+    }
+
+    .content-card h2 {
+      margin: 0 0 12px;
+      color: var(--blue);
+      font-size: 26px;
+    }
+
+    .content-card h3 {
+      margin: 28px 0 12px;
+      color: var(--ink);
+    }
+
+    .content-card p { color: var(--muted); line-height: 1.7; }
+    .content-card a { color: var(--blue); font-weight: 700; }
+
+    .form-field {
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 14px;
+      border: 1px solid #cdd9e7;
+      border-radius: 8px;
+      color: var(--ink);
+      background: #fbfdff;
+      font: inherit;
+    }
+
+    .form-field:focus { outline: 3px solid rgba(36, 89, 168, .16); border-color: var(--blue); }
+    .form-label { display: block; margin: 18px 0 7px; color: var(--ink); font-weight: 700; }
+
+    .primary-button {
+      min-height: 48px;
+      padding: 10px 24px;
+      border: 0;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--blue);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary-button:hover { background: var(--blue-dark); }
+    .message-error, .message-success { padding: 12px 14px; border-radius: 8px; }
+    .message-error { color: #a62929; background: #fff0f0; border: 1px solid #e7a5a5; }
+    .message-success { color: #207738; background: #effaf1; border: 1px solid #a8d9b2; }
+
+    .result-list { display: grid; gap: 10px; padding: 0; list-style: none; }
+    .result-list li { padding: 15px 16px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
+
+    @media (max-width: 600px) {
+      .page-container { width: min(100% - 20px, 940px); margin-top: 20px; }
+      .content-card { padding: 20px 16px; border-radius: 12px; }
+      .content-card h2 { font-size: 22px; }
+    }
+
+    @media (max-width: 600px) {
+      .site-title { padding: 14px 18px; }
+      .site-nav { justify-content: flex-start; }
+      .site-title { font-size: 22px; }
+      .site-nav { min-height: 52px; padding: 0 10px; }
+      .site-nav a { padding: 7px 8px; font-size: 12px; }
+    }
+  </style>
 </head>
 <body>
-  <!-- ヘッダー -->
-  <h1>防災アプリ</h1>
-
-  <!-- ナビゲーション -->
-  <nav>
-    <a href="/">ホーム</a> |
-    <a href="/shelter_search">避難所検索</a> |
-    <a href="/shelter_register">避難所登録</a> |
-    <a href="/board">指示・発信ボード</a>
-    ｜
-    {% if session.logged_in %}
-      ログイン中{% if session.username %}（{{ session.username }}）{% endif %}
-      <a href="/logout">ログアウト</a>
-    {% else %}
-      未ログイン
-      <a href="/login">ログイン</a>
-    {% endif %}
-  </nav>
-  <hr>
+  <header class="site-header">
+    <a class="site-title" href="/">防災アプリ</a>
+    <button class="menu-button" type="button" aria-label="メニューを開く" aria-expanded="false">☰</button>
+    <nav class="site-nav" aria-label="メインメニュー">
+      <a class="nav-general-home" href="/">ホーム</a>
+      <a class="nav-general-search" href="/shelter_search">避難所検索（避難所一覧）</a>
+      <a class="nav-general-result" href="/search_results">避難所検索結果表示画面</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a class="admin-link" href="/login">管理者向け</a>
+      <a class="admin-link" href="/shelter_register">避難所登録</a>
+      <a class="admin-link" href="/board">指示・発信ボード</a>
+      {% if session.logged_in %}
+        <a href="/logout">ログアウト（{{ session.username or '管理者' }}）</a>
+      {% endif %}
+    </nav>
+  </header>
 
   <main>
-    <!-- ここに子テンプレートの content が入る -->
     {% block content %}{% endblock %}
   </main>
 </body>
